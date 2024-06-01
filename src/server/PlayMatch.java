@@ -1,29 +1,23 @@
 package server;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Random;
-
 import util.Player;
 
 public class PlayMatch implements Runnable {
     private final Socket player1Socket;
-    private final Socket player2Socket;
 
     public PlayMatch(Socket player1) {
         this.player1Socket = player1;
-        this.player2Socket = null;
     }
 
     @Override
     public void run() {
-        if (player2Socket == null) {
-            playSingle();
-        } else {
-            playDuo();
-        }
+        playSingle();
     }
 
     private void playSingle() {
@@ -35,34 +29,49 @@ public class PlayMatch implements Runnable {
             PrintWriter player1Writer = new PrintWriter(player1Socket.getOutputStream(), true);
 
             while (true) {
+                // Recebe a opção do jogador
                 String optionStr = player1Reader.readLine();
+                if (optionStr == null) {
+                    break; // Sai do loop se a leitura retornar null (conexão encerrada)
+                }
+
                 int option = Integer.parseInt(optionStr);
 
                 if (option == 4) {
+                    player1Writer.println("Jogo Encerrado!");
                     break; // Sai do loop se a opção for 4 (Sair)
                 }
 
                 int cpuOption = random.nextInt(3) + 1;
 
-                // Lógica do jogo aqui...
+                // Lógica do jogo
+                String result;
                 if (option == cpuOption) {
                     player.increaseDraws();
+                    result = "Empate!";
                 } else if (option == 1 && cpuOption == 2 || option == 2 && cpuOption == 3 || option == 3 && cpuOption == 1) {
                     player.increaseVictories();
+                    result = "Você venceu!";
                 } else {
                     player.increaseDefeats();
+                    result = "Você perdeu!";
                 }
 
-                // Envie as estatísticas atualizadas de volta para o cliente
-                player1Writer.println("\nVitórias: " + player.getVictories() + "\nEmpates: " + player.getDraws() + "\nDerrotas: " + player.getDefeats());
+                // Envia o resultado da rodada
+                player1Writer.println(result);
+
+                // Envia as estatísticas atualizadas
+                String stats = "Vitórias: " + player.getVictories() + " Empates: " + player.getDraws() + " Derrotas: " + player.getDefeats();
+                player1Writer.println(stats);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                player1Socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-    }
-
-
-    private void playDuo() {
-
     }
 }

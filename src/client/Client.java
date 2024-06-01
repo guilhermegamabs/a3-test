@@ -27,47 +27,32 @@ public class Client {
             System.out.println("Você vai jogar sozinho? \n(1) - Sim \n(2) - Não");
             int opcaoPlay = scanner.nextInt();
 
-            boolean isPlayAlone;
-
-            if (opcaoPlay == 1) {
-                isPlayAlone = true;
-            } else if (opcaoPlay == 2) {
-                isPlayAlone = false;
-            } else {
-                System.out.println("Opção Inválida!");
-                isPlayAlone = true;
-            }
-
+            boolean isPlayAlone = opcaoPlay == 1;
             writer.println(isPlayAlone);
 
             int opcao = 0;
             while (opcao != 4) {
-                // Aguarda a opção escolhida pelo jogador
-                System.out.println("\nEscolha uma opção: \n(1) Papel \n(2) Pedra \n(3) Tesoura \n(4) Sair");
+                System.out.println("Escolha uma opção: \n(1) Papel \n(2) Pedra \n(3) Tesoura \n(4) Sair");
                 opcao = scanner.nextInt();
 
-                // Envie a opção para o servidor
                 writer.println(Integer.toString(opcao));
-
-                // Exiba a opção escolhida pelo jogador
                 System.out.println("Você escolheu a opção: " + opcao);
 
-                // Receba e exiba as estatísticas atualizadas do jogador
-                String resposta = reader.readLine();
-                if (resposta.equals("ATUALIZAR_ESTATISTICAS")) {
-                    // Ler e exibir as estatísticas atualizadas
-                    String estatisticasAtualizadas = reader.readLine();
-                    System.out.println(estatisticasAtualizadas);
-                    
-                    // Envie uma confirmação de que as estatísticas foram recebidas
-                    writer.println("STATS_RECEIVED");
-                }
+                // Receba e exiba o resultado da rodada
+                String result = reader.readLine();
+                System.out.println(result);
+
+                // Receba e exiba as estatísticas atualizadas
+                String stats = reader.readLine();
+                System.out.println(stats);
             }
 
             System.out.println("Jogo Encerrado!");
 
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            scanner.close();
         }
     }
 }

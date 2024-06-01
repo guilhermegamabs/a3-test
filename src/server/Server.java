@@ -29,9 +29,9 @@ public class Server {
                         String playerName = player1Reader.readLine();
                         System.out.println("Jogador conectado: " + playerName);
 
-                        // Aguarda a opção de jogo
-                        String option = player1Reader.readLine();
-                        boolean isPlayAlone = Boolean.parseBoolean(option);
+                        // Recebe a opção de jogo (true para jogar sozinho, false para jogar em dupla)
+                        boolean isPlayAlone = Boolean.parseBoolean(player1Reader.readLine());
+                        System.out.println("Jogar sozinho: " + isPlayAlone);
 
                         if (isPlayAlone) {
                             Thread gameThread = new Thread(new PlayMatch(player1));
@@ -51,7 +51,9 @@ public class Server {
             e.printStackTrace();
         } finally {
             try {
-                serverSocket.close();
+                if (serverSocket != null) {
+                    serverSocket.close();
+                }
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
