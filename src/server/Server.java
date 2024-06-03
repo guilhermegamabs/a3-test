@@ -25,8 +25,20 @@ public class Server {
 			
 				while(true) {
 					Socket player1 = serverSocket.accept();
-					Thread thread = new Thread(new PlayMatch(player1));
-					thread.run();
+					BufferedReader player1Reader = new BufferedReader(new InputStreamReader(player1.getInputStream()));
+		            PrintWriter player1Writer = new PrintWriter(player1.getOutputStream(), true);  // Enable auto-flush
+					
+		            // Recebe o nome do jogador
+		            String playerName = player1Reader.readLine();
+		            System.out.println("Jogador " + playerName + " conectado!");
+		            
+		            int opcaoPlay = Integer.parseInt(player1Reader.readLine());
+
+		            if(opcaoPlay == 1) {
+		            	playSingle(player1Reader, player1Writer);
+		            } else {
+		            	System.out.println("Vai jogar com outro jogador!");
+		             }
 				}
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -34,48 +46,8 @@ public class Server {
 				
 			}
     }
-}
-
-class PlayMatch implements Runnable {
-	private Socket player1 = null;
-	private Socket player2 = null;
-
-	public PlayMatch(Socket player1) {
-		this.player1 = player1;
-	}
-	
-	public PlayMatch(Socket player1, Socket player2) {
-		this.player1 = player1;
-		this.player2 = player2;
-	}
-
-	@Override
-	public void run() {
-		try {
-            BufferedReader player1Reader = new BufferedReader(new InputStreamReader(player1.getInputStream()));
-            PrintWriter player1Writer = new PrintWriter(player1.getOutputStream(), true);  // Enable auto-flush
-            
-            // Recebe o nome do jogador
-            String playerName = player1Reader.readLine();
-            System.out.println("Jogador " + playerName + " conectado!");
-            
-            int opcaoPlay = Integer.parseInt(player1Reader.readLine());
-            System.out.println("JOGAR SOZINHO? " + opcaoPlay);
-
-            if(opcaoPlay == 1) {
-            	if(player2 == null) {
-            		playSingle(player1Reader, player1Writer);
-            	}
-            } else {
-            	System.out.println("Vai jogar com outro jogador!");
-             }
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-	}
-	
-	private void playSingle(BufferedReader player1Reader, PrintWriter player1Writer) throws NumberFormatException, IOException {
+    
+    private static void playSingle(BufferedReader player1Reader, PrintWriter player1Writer) throws NumberFormatException, IOException {
 		Random random = new Random();
 		Player player = new Player();
 		
@@ -90,8 +62,10 @@ class PlayMatch implements Runnable {
                 player.increaseDraws();
             } else if (opcao == 1 && serverOption == 2 || opcao == 2 && serverOption == 3 || opcao == 3 && serverOption == 1) {
                 player.increaseVictories();
-            } else {
+            } else if(opcao == 2 && serverOption == 1 || opcao == 3 && serverOption == 2 || opcao == 1 && serverOption == 3){
                 player.increaseDefeats();
+            } else if(opcao == 4) {
+            	System.out.println("Jogo Encerrado!");
             }
             
             // Enviar para o client
