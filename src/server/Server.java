@@ -33,12 +33,36 @@ public class Server {
 		            System.out.println("Jogador " + playerName + " conectado!");
 		            
 		            int opcaoPlay = Integer.parseInt(player1Reader.readLine());
-
 		            if(opcaoPlay == 1) {
 		            	playSingle(player1Reader, player1Writer);
 		            } else {
-		            	System.out.println("Vai jogar com outro jogador!");
-		             }
+		            	String waitOpo = "Esperando Oponente se conectar!";
+		            	player1Writer.println(waitOpo);
+		            	player1Writer.flush();
+		            	
+		            	Socket player2 = serverSocket.accept();
+		            	BufferedReader player2Reader = new BufferedReader(new InputStreamReader(player2.getInputStream()));
+			            PrintWriter player2Writer = new PrintWriter(player2.getOutputStream(), true);  // Enable auto-flush
+			            
+			            String playerName2 = player2Reader.readLine();
+			            System.out.println("Jogador " + playerName2 + " conectado!");
+			            
+			            int opcaoPlay2 = Integer.parseInt(player2Reader.readLine());
+
+			            if(opcaoPlay2 == 2) {
+			            	player2Writer.println(waitOpo);
+			            	player2Writer.flush();
+			            	
+				            String foundOpo = "Oponente Encontrado!";
+			            	player1Writer.println(foundOpo);
+			            	player1Writer.flush();
+			            	
+			            	player2Writer.println(foundOpo);
+			            	player2Writer.flush();
+			            	
+			            	playMultiplayer(player1Reader, player1Writer, player2Reader, player2Writer);
+			            }
+		            }
 				}
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -74,4 +98,51 @@ public class Server {
             player1Writer.flush();
         }	
 	}
+    
+    private static void playMultiplayer(BufferedReader player1Reader, PrintWriter player1Writer, BufferedReader player2Reader, PrintWriter player2Writer) throws NumberFormatException, IOException {
+    	Player player1 = new Player();
+    	Player player2 = new Player();
+    	
+        int choosedOption1 = 0;
+        int choosedOption2 = 0;
+		
+        while(choosedOption1 !=4 || choosedOption2 != 4) {
+        	String chooseOption1 = "Escolha uma opção: (1) Papel (2) Pedra (3) Tesoura (4) Sair";
+	    	player1Writer.println(chooseOption1);
+	    	player1Writer.flush();
+	    	
+	        choosedOption1 = Integer.parseInt(player1Reader.readLine());
+	        
+	        String chooseOption2 = "Escolha uma opção: (1) Papel (2) Pedra (3) Tesoura (4) Sair";
+	    	player2Writer.println(chooseOption2);
+	    	player2Writer.flush();
+
+	        choosedOption2 = Integer.parseInt(player2Reader.readLine());
+	        
+	        if (choosedOption1 == choosedOption2) {
+	        	player1.increaseDraws();
+	        	player2.increaseDraws();
+            } else if (choosedOption1 == 1 && choosedOption2 == 2 || choosedOption1 == 2 && choosedOption2 == 3 || choosedOption1 == 3 && choosedOption2 == 1) {
+            	player1.increaseVictories();
+	        	player2.increaseDefeats();
+            } else if(choosedOption1 == 2 && choosedOption2 == 1 || choosedOption1 == 3 && choosedOption2 == 2 || choosedOption1 == 1 && choosedOption2 == 3){
+            	player1.increaseDefeats();
+            	player2.increaseVictories();
+            } else if(choosedOption1 == 4 || choosedOption2 == 4) {
+            	System.out.println("Jogo Encerrado!");
+            }
+            
+            // Enviar para o client
+            String stats1 = "Vitórias: " + player1.getVictories() + " | Empates: " + player1.getDraws() + " | Derrotas: " + player1.getDefeats();
+            player1Writer.println(stats1);
+            player1Writer.flush();
+            
+            // Enviar para o client
+            String stats2 = "Vitórias: " + player2.getVictories() + " | Empates: " + player2.getDraws() + " | Derrotas: " + player2.getDefeats();
+            player2Writer.println(stats2);
+            player2Writer.flush();
+           
+        }	
+
+    }
 }

@@ -30,16 +30,30 @@ public class Client {
             
             int opcao = 0;
             
-            while(opcao != 4) {
-                System.out.println("Escolha uma opção: \n(1) Papel \n(2) Pedra \n(3) Tesoura \n(4) Sair");
-                opcao = scanner.nextInt();
-                writer.println(opcao);
-                
-                String stats = reader.readLine();
-                System.out.println(stats);
-            }
-            
-            
+            if(opcaoPlay == 1) {
+            	while(opcao != 4) {
+                    System.out.println("Escolha uma opção: \n(1) Papel \n(2) Pedra \n(3) Tesoura \n(4) Sair");
+                    opcao = scanner.nextInt();
+                    writer.println(opcao);
+                    
+                    String stats = reader.readLine();
+                    System.out.println(stats);
+                }
+            } else {
+            	String waitOpo = reader.readLine();
+            	System.out.println(waitOpo); // Esperando Oponente se conectar!
+            	
+            	String foundOpo = reader.readLine(); // Oponente Encontrado!
+            	System.out.println(foundOpo);
+            	
+            	int opcao2 = 0;
+            	while(opcao2 != 4) {
+            		String chooseOption = reader.readLine();
+                	System.out.println(chooseOption); // Escolha uma opção: (1) Papel (2) Pedra (3) Tesoura (4) Sair
+                	int choosedOption = scanner.nextInt(); // Salva a opção
+                	writer.println(choosedOption);
+            	}
+            }    
     	} catch(Exception e) {
     		e.printStackTrace();
     	} finally {
