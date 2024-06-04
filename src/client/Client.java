@@ -1,5 +1,3 @@
-package client;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,11 +10,27 @@ public class Client {
         Scanner scanner = new Scanner(System.in);
         Socket socket = null;
 
-        final String SERVER_IP = "localhost";
-        final int SERVER_PORT = 12345;
+        String ipServer = "127.0.0.1";
+        int portServer = 12345;
+
+        String playerInput;
 
         try {
-            socket = new Socket(SERVER_IP, SERVER_PORT);
+            System.out.printf("Informe o IP do Servidor (IP DEFAULT: %s): ", ipServer);
+            playerInput = scanner.nextLine();
+
+            if(playerInput.length() > 0) {
+                ipServer = playerInput;
+            }
+
+            System.out.printf("Informe a PORTA do Servidor (PORTA DEFAULT: %s): ", portServer);
+            playerInput = scanner.nextLine();
+
+            if (playerInput.length() > 0) {
+                portServer = Integer.parseInt(playerInput);
+            }
+            
+            socket = new Socket(ipServer, portServer);
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
