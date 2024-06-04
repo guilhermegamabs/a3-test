@@ -1,13 +1,11 @@
-package server;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-import util.Player;
-
 public class Server {
-	private static final int PORT = 12345;
+    private static final int PORT = 12345;
+    private static ArrayList<Socket> singlePlayerList = new ArrayList<>();
     private static ArrayList<Socket> multiplayerList = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
@@ -15,8 +13,7 @@ public class Server {
         System.out.println("Server is Running!");
 
         // Cria uma thread para lidar com a lista de jogadores multiplayer
-        Thread multiplayerThread = new Thread(new MultiplayerHandler());
-        multiplayerThread.start();
+        
 
         while (true) {
             Socket playerSocket = serverSocket.accept();
@@ -30,12 +27,44 @@ public class Server {
             int opcaoPlay = Integer.parseInt(playerReader.readLine());
             if (opcaoPlay == 1) {
                 // Jogador escolheu jogar sozinho
-                playSingle(playerReader, playerWriter);
+                singlePlayerList.add(playerSocket);
+                Thread singleThread = new Thread(new SingleHandler());
+                singleThread.start();
             } else {
                 // Jogador escolheu jogar multiplayer
                 multiplayerList.add(playerSocket);
                 playerWriter.println("Esperando Oponente se conectar!");
                 playerWriter.flush();
+
+                Thread multiplayerThread = new Thread(new MultiplayerHandler());
+                multiplayerThread.start();
+            }
+        }
+    }
+
+    private static class SingleHandler implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                if(singlePlayerList.size() == 1) {
+                    Socket player = singlePlayerList.remove(0);
+
+                    try {
+                        playSingle(player);
+                    } catch (NumberFormatException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                } else {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
@@ -51,14 +80,14 @@ public class Server {
 
                     // Cria uma instância de jogo multiplayer para os dois jogadores
                     try {
-						playMultiplayer(player1Socket, player2Socket);
-					} catch (NumberFormatException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+                        playMultiplayer(player1Socket, player2Socket);
+                    } catch (NumberFormatException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 } else {
                     // Aguarda um pouco antes de verificar novamente
                     try {
@@ -70,7 +99,10 @@ public class Server {
             }
         }
     }
-    private static void playSingle(BufferedReader player1Reader, PrintWriter player1Writer) throws NumberFormatException, IOException {
+    private static void playSingle(Socket playerSocket) throws NumberFormatException, IOException {
+        BufferedReader player1Reader = new BufferedReader(new InputStreamReader(playerSocket.getInputStream()));
+        PrintWriter player1Writer = new PrintWriter(playerSocket.getOutputStream(), true);
+
         Random random = new Random();
         Player player = new Player();
 
@@ -105,7 +137,7 @@ public class Server {
 
         Player player1 = new Player();
         Player player2 = new Player();
-        
+
         String foundOpo = "Oponente Encontrado!";
         player1Writer.println(foundOpo);
         player1Writer.flush();
