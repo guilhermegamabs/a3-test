@@ -1,66 +1,75 @@
 package server;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Random;
 
 import util.Player;
 
 public class Server {
-    private static final int PORT = 12345;
+	private static final int PORT = 12345;
+    private static ArrayList<Socket> multiplayerList = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
-        try {
-            ServerSocket serverSocket = new ServerSocket(PORT);
-            System.out.println("Server is Running!");
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        System.out.println("Server is Running!");
 
-            while (true) {
-                Socket player1 = serverSocket.accept();
-                BufferedReader player1Reader = new BufferedReader(new InputStreamReader(player1.getInputStream()));
-                PrintWriter player1Writer = new PrintWriter(player1.getOutputStream(), true);  // Enable auto-flush
+        // Cria uma thread para lidar com a lista de jogadores multiplayer
+        Thread multiplayerThread = new Thread(new MultiplayerHandler());
+        multiplayerThread.start();
 
-                // Recebe o nome do jogador
-                String playerName = player1Reader.readLine();
-                System.out.println("Jogador " + playerName + " conectado!");
+        while (true) {
+            Socket playerSocket = serverSocket.accept();
+            BufferedReader playerReader = new BufferedReader(new InputStreamReader(playerSocket.getInputStream()));
+            PrintWriter playerWriter = new PrintWriter(playerSocket.getOutputStream(), true);
 
-                int opcaoPlay = Integer.parseInt(player1Reader.readLine());
-                if (opcaoPlay == 1) {
-                    playSingle(player1Reader, player1Writer);
-                } else {
-                    String waitOpo = "Esperando Oponente se conectar!";
-                    player1Writer.println(waitOpo);
-                    player1Writer.flush();
+            // Recebe o nome do jogador
+            String playerName = playerReader.readLine();
+            System.out.println("Jogador " + playerName + " conectado!");
 
-                    Socket player2 = serverSocket.accept();
-                    BufferedReader player2Reader = new BufferedReader(new InputStreamReader(player2.getInputStream()));
-                    PrintWriter player2Writer = new PrintWriter(player2.getOutputStream(), true);  // Enable auto-flush
-
-                    String playerName2 = player2Reader.readLine();
-                    System.out.println("Jogador " + playerName2 + " conectado!");
-
-                    int opcaoPlay2 = Integer.parseInt(player2Reader.readLine());
-
-                    if (opcaoPlay2 == 2) {
-                        player2Writer.println(waitOpo);
-                        player2Writer.flush();
-
-                        String foundOpo = "Oponente Encontrado!";
-                        player1Writer.println(foundOpo);
-                        player1Writer.flush();
-
-                        player2Writer.println(foundOpo);
-                        player2Writer.flush();
-
-                        playMultiplayer(player1Reader, player1Writer, player2Reader, player2Writer);
-                    }
-                }
+            int opcaoPlay = Integer.parseInt(playerReader.readLine());
+            if (opcaoPlay == 1) {
+                // Jogador escolheu jogar sozinho
+                playSingle(playerReader, playerWriter);
+            } else {
+                // Jogador escolheu jogar multiplayer
+                multiplayerList.add(playerSocket);
+                playerWriter.println("Esperando Oponente se conectar!");
+                playerWriter.flush();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // Close resources if needed
         }
     }
 
+    private static class MultiplayerHandler implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                if (multiplayerList.size() >= 2) {
+                    // Encontra dois jogadores que desejam jogar multiplayer
+                    Socket player1Socket = multiplayerList.remove(0);
+                    Socket player2Socket = multiplayerList.remove(0);
+
+                    // Cria uma instância de jogo multiplayer para os dois jogadores
+                    try {
+						playMultiplayer(player1Socket, player2Socket);
+					} catch (NumberFormatException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                } else {
+                    // Aguarda um pouco antes de verificar novamente
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
     private static void playSingle(BufferedReader player1Reader, PrintWriter player1Writer) throws NumberFormatException, IOException {
         Random random = new Random();
         Player player = new Player();
@@ -88,9 +97,21 @@ public class Server {
         }
     }
 
-    private static void playMultiplayer(BufferedReader player1Reader, PrintWriter player1Writer, BufferedReader player2Reader, PrintWriter player2Writer) throws NumberFormatException, IOException {
+    private static void playMultiplayer(Socket player1Socket, Socket player2Socket) throws NumberFormatException, IOException {
+        BufferedReader player1Reader = new BufferedReader(new InputStreamReader(player1Socket.getInputStream()));
+        PrintWriter player1Writer = new PrintWriter(player1Socket.getOutputStream(), true);
+        BufferedReader player2Reader = new BufferedReader(new InputStreamReader(player2Socket.getInputStream()));
+        PrintWriter player2Writer = new PrintWriter(player2Socket.getOutputStream(), true);
+
         Player player1 = new Player();
         Player player2 = new Player();
+        
+        String foundOpo = "Oponente Encontrado!";
+        player1Writer.println(foundOpo);
+        player1Writer.flush();
+
+        player2Writer.println(foundOpo);
+        player2Writer.flush();
 
         int choosedOption1 = 0;
         int choosedOption2 = 0;
